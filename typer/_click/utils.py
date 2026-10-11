@@ -423,7 +423,15 @@ def _detect_program_name(
     # not exist if a setuptools script is installed as an egg. It may be
     # set incorrectly for entry points created with pip on Windows.
     # It is set to "" inside a Shiv or PEX zipapp.
-    if getattr(_main, "__package__", None) in {None, ""} or (
+    #
+    # A top-level module run with ``python -m foo`` also reports an empty
+    # ``__package__``. Distinguish it from a script (``python foo.py``) by
+    # checking whether the ``__main__`` module has a spec: ``-m`` execution
+    # sets ``__spec__``, while running a file leaves it ``None``.
+    if (
+        getattr(_main, "__package__", None) in {None, ""}
+        and getattr(_main, "__spec__", None) is None
+    ) or (
         os.name == "nt"
         and _main.__package__ == ""
         and not os.path.exists(path)
